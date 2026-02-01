@@ -5,21 +5,33 @@ import { Loader2 } from 'lucide-react';
 
 export default function Admin() {
     const [activeBookings, setActiveBookings] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
+    const [password, setPassword] = useState('');
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-    useEffect(() => {
-        fetchBookings();
-    }, []);
+    // Initial check? No, require password first.
+
+    async function handleLogin(e) {
+        e.preventDefault();
+        setLoading(true);
+        // Try to fetch to verify password
+        const { data, error } = await supabase.rpc('get_admin_bookings', { p_password: password });
+
+        if (error) {
+            alert('Invalid Password');
+            setPassword('');
+        } else {
+            setIsAuthenticated(true);
+            setActiveBookings(data || []);
+        }
+        setLoading(false);
+    }
 
     async function fetchBookings() {
+        // Refresh helper
+        if (!isAuthenticated) return;
         setLoading(true);
-        const { data } = await supabase
-            .from('bookings')
-            .select('*, houses(name), courts(name)')
-            .gte('booking_date', new Date().toISOString().split('T')[0])
-            .order('booking_date', { ascending: true })
-            .order('start_time', { ascending: true });
-
+        const { data } = await supabase.rpc('get_admin_bookings', { p_password: password });
         if (data) setActiveBookings(data);
         setLoading(false);
     }
@@ -30,11 +42,41 @@ export default function Admin() {
         fetchBookings();
     }
 
+    if (!isAuthenticated) {
+        return (
+            <div className="min-h-screen bg-brand-50 flex flex-col justify-center items-center p-4">
+                <Header />
+                <div className="bg-white p-8 rounded-xl shadow-md w-full max-w-sm mt-8">
+                    <h2 className="text-xl font-bold mb-4 text-center">Admin Access</h2>
+                    <form onSubmit={handleLogin} className="space-y-4">
+                        <input
+                            type="password"
+                            placeholder="Enter Admin Password"
+                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ocean-500 outline-none"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                        />
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full py-2 bg-brand-900 text-white font-bold rounded-lg hover:bg-brand-800 disabled:opacity-50"
+                        >
+                            {loading ? 'Checking...' : 'Login'}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-brand-50">
             <Header />
             <div className="max-w-4xl mx-auto px-4 py-8">
-                <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
+                <div className="flex justify-between items-center mb-6">
+                    <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+                    <button onClick={fetchBookings} className="text-sm text-ocean-600 hover:underline">Refresh</button>
+                </div>
 
                 {loading ? <Loader2 className="animate-spin" /> : (
                     <div className="bg-white rounded-xl shadow overflow-hidden">

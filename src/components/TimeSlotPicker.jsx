@@ -20,13 +20,12 @@ export function TimeSlotPicker({ selectedCourtId, selectedDate, selectedTime, on
     async function fetchAvailability() {
         setLoading(true);
         // Fetch bookings for this court and date
-        // We only care about confirmed bookings
+        // Query the PUBLIC VIEW (no need to filter status='confirmed' as view handles it)
         const { data, error } = await supabase
-            .from('bookings')
-            .select('start_time, houses(name)')
+            .from('public_bookings_view')
+            .select('start_time, house_name') // View has flattened names
             .eq('court_id', selectedCourtId)
-            .eq('booking_date', selectedDate)
-            .eq('status', 'confirmed');
+            .eq('booking_date', selectedDate);
 
         if (error) {
             console.error('Error fetching availability:', error);
@@ -35,7 +34,7 @@ export function TimeSlotPicker({ selectedCourtId, selectedDate, selectedTime, on
             data?.forEach(booking => {
                 // booking.start_time comes as "07:00:00" usually
                 const time = booking.start_time.substring(0, 5); // "07:00"
-                mapping[time] = booking.houses?.name || 'Booked';
+                mapping[time] = booking.house_name || 'Booked';
             });
             setTakenSlots(mapping);
         }

@@ -18,15 +18,10 @@ export default function MyBookings() {
         setLoading(true);
         setSearched(true);
 
-        // Fetch bookings for this email
-        // Join with houses and courts to get names
+        // Fetch bookings for this email using Secure RPC
         const { data, error } = await supabase
-            .from('bookings')
-            .select('*, houses(name), courts(name)')
-            .eq('booker_email', email)
-            .eq('status', 'confirmed')
-            .gte('booking_date', new Date().toISOString().split('T')[0])
-            .order('booking_date', { ascending: false });
+            .rpc('get_my_bookings', { p_email: email });
+        // The RPC already orders by date desc
 
         if (error) {
             console.error(error);

@@ -42,7 +42,7 @@ serve(async (req) => {
                 "Authorization": `Bearer ${RESEND_API_KEY}`,
             },
             body: JSON.stringify({
-                from: "onboarding@resend.dev", // Default testing domain. Change to your verified domain later.
+                from: "Los Naranjos Reservations <reservations@booktennis.cc>",
                 to: [email],
                 subject: `Booking Confirmed: ${court_name} on ${dateStr}`,
                 html: `
@@ -57,7 +57,11 @@ serve(async (req) => {
               <p style="margin: 5px 0;"><strong>Time:</strong> ${start_time}</p>
             </div>
 
-            <p style="font-size: 12px; color: #666;">
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+            <p style="font-size: 12px; color: #999; text-align: center;">
+              This email is automatically generated. Please do not reply to this email as it is not monitored.
+            </p>
+            <p style="font-size: 12px; color: #ccc; text-align: center;">
               Ref: ${booking_id}
             </p>
           </div>

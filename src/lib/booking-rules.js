@@ -20,13 +20,13 @@ export async function validateBookingRules(houseId, courtId, bookingDate, startT
     }
 
     // 2. Check Max Active Bookings (Network Request)
-    // We need to fetch current active bookings for this house
+    // We need to fetch current active bookings for this house from the VIEW
     const { data: activeBookings, error } = await supabase
-        .from('bookings')
-        .select('id')
+        .from('public_bookings_view')
+        .select('house_id') // We just need to count them
         .eq('house_id', houseId)
         .eq('court_id', courtId)
-        .eq('status', 'confirmed')
+        // View already filters confirmed
         .gte('booking_date', new Date().toISOString().split('T')[0]); // booking_date >= today
 
     if (error) {

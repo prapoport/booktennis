@@ -1,7 +1,8 @@
 import React from 'react';
 import { COURTS } from '../lib/constants';
 import clsx from 'clsx';
-import { Trophy, Activity } from 'lucide-react'; // Icons for sports
+import { PadelIcon, TennisIcon } from './CourtIcons'; // Custom icons
+import { Trophy } from 'lucide-react'; // Fallback
 
 export function CourtSelector({ courts = [], selectedCourtId, onSelect }) {
     return (
@@ -23,7 +24,11 @@ export function CourtSelector({ courts = [], selectedCourtId, onSelect }) {
                         // Assuming 'padel' and 'tennis'/'pickleball' or similar.
                         // If type is unknown, default to Trophy.
                         const isPadel = court.court_type?.toLowerCase().includes('padel');
-                        const Icon = isPadel ? Activity : Trophy;
+                        const isTennis = court.court_type?.toLowerCase().includes('tennis') || court.court_type?.toLowerCase().includes('pickle');
+
+                        let Icon = Trophy;
+                        if (isPadel) Icon = PadelIcon;
+                        else if (isTennis) Icon = TennisIcon;
 
                         return (
                             <button
@@ -40,7 +45,7 @@ export function CourtSelector({ courts = [], selectedCourtId, onSelect }) {
                                     "mb-2 p-3 rounded-full transition-colors",
                                     isSelected ? "bg-ocean-50 text-ocean-600" : "bg-brand-100 text-brand-600"
                                 )}>
-                                    <Icon size={24} strokeWidth={2.5} />
+                                    <Icon size={44} strokeWidth={1.5} />
                                 </div>
                                 <span className={clsx(
                                     "font-bold text-sm text-center leading-tight",
