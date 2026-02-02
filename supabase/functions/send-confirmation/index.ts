@@ -15,6 +15,7 @@ interface BookingRequest {
     start_time: string;
     court_name: string;
     house_name: string;
+    cancellation_token: string;
 }
 
 serve(async (req) => {
@@ -24,7 +25,7 @@ serve(async (req) => {
     }
 
     try {
-        const { booking_id, email, booker_name, booking_date, start_time, court_name, house_name } = await req.json() as BookingRequest;
+        const { booking_id, email, booker_name, booking_date, start_time, court_name, house_name, cancellation_token } = await req.json() as BookingRequest;
 
         if (!RESEND_API_KEY) {
             throw new Error("Missing RESEND_API_KEY");
@@ -33,6 +34,14 @@ serve(async (req) => {
         // Format date nicely (Assuming YYYY-MM-DD)
         const dateObj = new Date(booking_date + 'T00:00:00');
         const dateStr = dateObj.toLocaleDateString("en-US", { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+        // Format time nicely (AM/PM)
+        const [hours, minutes] = start_time.split(':');
+        const timeObj = new Date();
+        timeObj.setHours(parseInt(hours), parseInt(minutes));
+        const timeStr = timeObj.toLocaleTimeString("en-US", { hour: 'numeric', minute: '2-digit' });
+
+        const cancelLink = `https://booktennis.cc/cancel-booking?token=${cancellation_token}`;
 
         // Send email using Resend API
         const res = await fetch("https://api.resend.com/emails", {
@@ -54,8 +63,13 @@ serve(async (req) => {
             <div style="background-color: #f2e8e5; padding: 20px; border-radius: 8px; margin: 20px 0;">
               <p style="margin: 5px 0;"><strong>Court:</strong> ${court_name}</p>
               <p style="margin: 5px 0;"><strong>Date:</strong> ${dateStr}</p>
-              <p style="margin: 5px 0;"><strong>Time:</strong> ${start_time}</p>
+              <p style="margin: 5px 0;"><strong>Time:</strong> ${timeStr}</p>
+              <p style="margin: 5px 0;"><strong>Duration:</strong> 1 Hour</p>
             </div>
+
+            <p style="text-align: center; margin: 30px 0;">
+                <a href="${cancelLink}" style="background-color: #ef4444; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Cancel Booking</a>
+            </p>
 
             <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
             <p style="font-size: 12px; color: #999; text-align: center;">

@@ -135,7 +135,8 @@ export default function Home() {
                     booking_date: date,
                     start_time: time,
                     court_name: courts.find(c => c.id === courtId)?.name || 'Court',
-                    house_name: houseId // houseId here is actually the name, passed from HouseSelector
+                    house_name: houseId, // houseId here is actually the name, passed from HouseSelector
+                    cancellation_token: data.booking.cancellation_token
                 }
             });
 

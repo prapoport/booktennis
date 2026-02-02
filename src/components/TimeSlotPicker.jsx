@@ -19,11 +19,10 @@ export function TimeSlotPicker({ selectedCourtId, selectedDate, selectedTime, on
 
     async function fetchAvailability() {
         setLoading(true);
-        // Fetch bookings for this court and date
-        // Query the PUBLIC VIEW (no need to filter status='confirmed' as view handles it)
+        // Fetch public booking view
         const { data, error } = await supabase
             .from('public_bookings_view')
-            .select('start_time, house_name') // View has flattened names
+            .select('start_time, end_time, house_name')
             .eq('court_id', selectedCourtId)
             .eq('booking_date', selectedDate);
 
@@ -32,11 +31,56 @@ export function TimeSlotPicker({ selectedCourtId, selectedDate, selectedTime, on
         } else {
             const mapping = {};
             data?.forEach(booking => {
-                // booking.start_time comes as "07:00:00" usually
-                const time = booking.start_time.substring(0, 5); // "07:00"
-                mapping[time] = booking.house_name || 'Booked';
+                // Determine which 30-min slots are covered by this booking
+                // Simplified: Just store the booking intervals to check against slots later, 
+                // OR pre-calculate taken slots here. 
+                // Let's stick to the current pattern: map "slot string" -> "house name".
+                // But now a single booking (say 5:00-6:00) blocks 4:30(partial), 5:00(full), 5:30(full).
+
+                // Wait, "blocks" means you cannot START a booking at that time.
+                // If I have a booking 5:00-6:00:
+                // - Can I start at 4:30? No, 4:30-5:30 overlaps.
+                // - Can I start at 5:00? No.
+                // - Can I start at 5:30? No.
+                // - Can I start at 6:00? Yes.
+
+                // So for every slot candidate S (duration 60m), 
+                // check if (S < bookingEnd) AND (S+60 > bookingStart).
             });
-            setTakenSlots(mapping);
+
+            // Actually, keep 'data' in state might be cleaner, 
+            // but let's just use the `takenSlots` to map "Start Time" -> "Blocking House".
+            // We'll iterate all possible slots and check against all bookings.
+
+            const allSlots = TIME_SLOTS;
+            const blockedMap = {};
+
+            allSlots.forEach(slotStartTime => {
+                // slot described as: Start = slotStartTime, End = slotStartTime + 60m
+
+                // Parse slot start
+                const [h, m] = slotStartTime.split(':').map(Number);
+                const slotStartMinutes = h * 60 + m;
+                const slotEndMinutes = slotStartMinutes + 60; // Fixed 60m duration
+
+                // Check conflict with any booking
+                const conflict = data?.find(b => {
+                    const [bh, bm] = b.start_time.split(':').map(Number);
+                    const bStart = bh * 60 + bm;
+
+                    const [eh, em] = b.end_time.split(':').map(Number);
+                    const bEnd = eh * 60 + em;
+
+                    // Overlap logic: (StartA < EndB) and (EndA > StartB)
+                    return (slotStartMinutes < bEnd) && (slotEndMinutes > bStart);
+                });
+
+                if (conflict) {
+                    blockedMap[slotStartTime] = conflict.house_name || 'Booked';
+                }
+            });
+
+            setTakenSlots(blockedMap);
         }
         setLoading(false);
     }

@@ -45,7 +45,7 @@ export function CourtSelector({ courts = [], selectedCourtId, onSelect }) {
                                     "mb-2 p-3 rounded-full transition-colors",
                                     isSelected ? "bg-ocean-50 text-ocean-600" : "bg-brand-100 text-brand-600"
                                 )}>
-                                    <Icon size={44} strokeWidth={1.5} />
+                                    <Icon size={44} strokeWidth={2} />
                                 </div>
                                 <span className={clsx(
                                     "font-bold text-sm text-center leading-tight",

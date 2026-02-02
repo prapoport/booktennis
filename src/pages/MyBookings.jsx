@@ -31,16 +31,21 @@ export default function MyBookings() {
         setLoading(false);
     };
 
-    const handleCancel = async (bookingId) => {
+    const handleCancel = async (booking) => {
         if (!window.confirm('Are you sure you want to cancel this reservation?')) return;
 
-        const { error } = await supabase
-            .from('bookings')
-            .update({ status: 'cancelled', cancelled_at: new Date().toISOString() })
-            .eq('id', bookingId);
+        if (!booking.cancellation_token) {
+            alert('Cannot cancel this booking (missing token).');
+            return;
+        }
+
+        const { data, error } = await supabase.rpc('cancel_booking', { p_token: booking.cancellation_token });
 
         if (error) {
+            console.error(error);
             alert('Failed to cancel booking.');
+        } else if (data && !data.success) {
+            alert(data.error || 'Failed to cancel booking.');
         } else {
             // Refresh
             fetchBookings();
@@ -90,7 +95,7 @@ export default function MyBookings() {
                             ) : (
                                 <div className="space-y-3">
                                     {upcomingBookings.map(booking => (
-                                        <BookingCard key={booking.id} booking={booking} onCancel={() => handleCancel(booking.id)} />
+                                        <BookingCard key={booking.id} booking={booking} onCancel={() => handleCancel(booking)} />
                                     ))}
                                 </div>
                             )}
@@ -122,7 +127,7 @@ function BookingCard({ booking, onCancel, isPast }) {
         <div className="bg-white p-4 rounded-xl border border-brand-200 shadow-sm flex justify-between items-center">
             <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                    <span className="font-bold text-brand-900">{booking.courts?.name || 'Unknown Court'}</span>
+                    <span className="font-bold text-brand-900">{booking.court_name || 'Unknown Court'}</span>
                     {booking.status === 'cancelled' && (
                         <span className="text-[10px] font-bold text-red-500 border border-red-200 bg-red-50 px-1.5 rounded">CANCELLED</span>
                     )}
@@ -132,7 +137,7 @@ function BookingCard({ booking, onCancel, isPast }) {
                     <span className="flex items-center gap-1"><Clock size={14} /> {timeStr}</span>
                 </div>
                 <div className="text-xs text-brand-400">
-                    {booking.houses?.name} • {booking.booker_name}
+                    {booking.house_name} • {booking.booker_name}
                 </div>
             </div>
 
