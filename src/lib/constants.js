@@ -7,6 +7,7 @@ export const HOUSES = [
     'Casa del Mar',
     'Casa Hamui',
     'Casa Hola Ola',
+    'Casa Marvilla',
     'Casa Naila del Mar',
     'Casa Navari',
     'Casa NumaNa',
